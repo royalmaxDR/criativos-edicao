@@ -340,7 +340,7 @@ def render_range(plan, F0, F1, tmp, enc):
                 kz = 1.0; bsig = 0
                 if prev == "broll" and dt0 < 0.2:
                     kz = 1 + 0.18 * (1 - dt0 / 0.2) ** 2; bsig = 9 * S * (1 - dt0 / 0.2)
-                img = br.get(seg["broll"], p, kz, t, dt0, W, H, seg.get("kb", 1), seg.get("grade")); img = c.shift(img, sx, sy) if cam["shake"] else img
+                img = br.get(seg["broll"], p, kz, t, t if seg.get("sync") else dt0, W, H, seg.get("kb", 1), seg.get("grade")); img = c.shift(img, sx, sy) if cam["shake"] else img
                 if bsig > 0.3:
                     img = cv2.GaussianBlur(img, (0, 0), bsig)
                 cap_y = int(H * plan["captions"]["y_full"])

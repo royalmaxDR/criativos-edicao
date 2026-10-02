@@ -56,7 +56,15 @@ def main():
         for k, it in enumerate(c):
             fn = os.path.join(a.out, f"{key}_{k}.jpg")
             try:
-                open(fn, "wb").write(requests.get(it["url"], headers=UA, timeout=60).content)
+                import time
+                for tent in range(4):                                             # o Commons limita rajadas: tenta de novo com espera
+                    data = requests.get(it["url"], headers=UA, timeout=60).content
+                    if data.startswith(bytes([0xFF, 0xD8, 0xFF])) or data.startswith(bytes([0x89, 0x50, 0x4E, 0x47])):   # JPEG ou PNG de verdade
+                        break
+                    time.sleep(3 * (tent + 1))
+                else:
+                    print("    imagem invalida (limite do servidor), pulando"); continue
+                open(fn, "wb").write(data)
             except Exception as e:
                 print("    erro ao baixar:", e); continue
             fontes[os.path.basename(fn)] = dict(query=q, **{x: it[x] for x in ("title", "license", "author", "page", "needs_credit")}); got.append(fn)
