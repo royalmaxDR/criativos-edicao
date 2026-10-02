@@ -37,7 +37,7 @@ sudo apt update && sudo apt install -y python3 python3-pip python3-venv ffmpeg g
 ## 2. Baixar a skill e instalar as dependências
 
 ```bash
-git clone <URL-DO-REPOSITORIO> criativos-edicao
+git clone https://github.com/royalmaxDR/criativos-edicao.git criativos-edicao
 cd criativos-edicao
 python scripts/setup.py
 ```

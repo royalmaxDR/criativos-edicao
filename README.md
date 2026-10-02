@@ -24,7 +24,7 @@ Ela **aprende o estilo de edição de um criativo de referência** e **aplica es
 ## Começar
 
 ```bash
-git clone <URL-DO-REPOSITORIO> criativos-edicao
+git clone https://github.com/royalmaxDR/criativos-edicao.git criativos-edicao
 cd criativos-edicao
 python scripts/setup.py
 python scripts/selftest.py
