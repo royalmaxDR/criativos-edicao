@@ -47,6 +47,7 @@ def main():
     ap.add_argument("--door-sfx", nargs="*", default=[], help="arquivos reais de impacto para a porta, formato arquivo:pico_s:ganho (ex. impacto.mp3:0.09:1.0)")
     ap.add_argument("--static-sfx", nargs="*", default=[], help="arquivos de chiado/glitch, formato arquivo:pico_s:ganho; alternam entre as quedas de sinal")
     ap.add_argument("--voice-gain", dest="voice_gain", type=float, default=0.7, help="volume da fala (a porta precisa soar mais alta que a voz)")
+    ap.add_argument("--events", help="JSON com sons sincronizados: [{f, t, pk, g, lp, rate}] (arquivo, instante, pico no arquivo, ganho, passa-baixa Hz, velocidade/tom)")
     ap.add_argument("--dur", type=float, default=10.0); ap.add_argument("--scene-gain", type=float, default=0.0, help="volume do audio original da cena (0 = mudo)")
     a = ap.parse_args(); rs = np.random.RandomState(7)
     G = [float(x) for x in a.glitch.split(",") if x.strip()]
@@ -111,6 +112,22 @@ def main():
     for g in G:
         n = int(0.4 * SR); s = static(n, rs) * np.concatenate([np.linspace(0.3, 1, n // 4), np.ones(n - n // 4)]); i = int(g * SR); j = min(N, i + n)
         mix[i:j] = mix[i:j] * 0.35 + s[:j - i] * 0.30                                                     # chiado engole a voz por um instante
+    if a.events:                                                                                          # passos, macaneta, trinco... cada um no quadro exato
+        import json
+        cache = {}
+        for e in json.load(open(a.events, encoding="utf-8")):
+            key = (e["f"], e.get("lp"), e.get("rate", 1.0))
+            if key not in cache:
+                af = []
+                if e.get("rate", 1.0) != 1.0:
+                    af.append(f"asetrate={int(SR * e['rate'])},aresample={SR}")
+                if e.get("lp"):
+                    af.append(f"lowpass=f={e['lp']}")
+                tmp = a.out + ".ev.wav"
+                subprocess.run(["ffmpeg", "-v", "error", "-y", "-i", e["f"]] + (["-af", ",".join(af)] if af else []) + ["-ac", "1", "-ar", str(SR), tmp], check=True)
+                cache[key] = rd(tmp); os.remove(tmp)
+            x = cache[key]; i = int((e["t"] - e.get("pk", 0) / e.get("rate", 1.0)) * SR); x = x[max(0, -i):]; i = max(0, i); j = min(N, i + len(x))
+            mix[i:j] += x[:j - i] * e.get("g", 1.0)
     for k, g in enumerate(G):
         if a.static_sfx:
             place(a.static_sfx[k % len(a.static_sfx)], g + 0.05, 0.6)

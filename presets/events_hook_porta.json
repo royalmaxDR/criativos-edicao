@@ -1,0 +1,227 @@
+[
+{
+"f": "sfx/thud.mp3",
+"t": 0.02,
+"pk": 0.07,
+"g": 0.175,
+"lp": 700,
+"rate": 1.31
+},
+{
+"f": "sfx/double_dull.mp3",
+"t": 0.025,
+"pk": 0.045,
+"g": 0.067,
+"lp": 700,
+"rate": 1.45
+},
+{
+"f": "sfx/thud.mp3",
+"t": 0.21,
+"pk": 0.07,
+"g": 0.259,
+"lp": 700,
+"rate": 1.34
+},
+{
+"f": "sfx/double_dull.mp3",
+"t": 0.215,
+"pk": 0.045,
+"g": 0.09,
+"lp": 700,
+"rate": 1.33
+},
+{
+"f": "sfx/thud.mp3",
+"t": 0.39,
+"pk": 0.07,
+"g": 0.277,
+"lp": 700,
+"rate": 1.4
+},
+{
+"f": "sfx/double_dull.mp3",
+"t": 0.395,
+"pk": 0.045,
+"g": 0.113,
+"lp": 700,
+"rate": 1.4
+},
+{
+"f": "sfx/thud.mp3",
+"t": 0.56,
+"pk": 0.07,
+"g": 0.355,
+"lp": 700,
+"rate": 1.45
+},
+{
+"f": "sfx/double_dull.mp3",
+"t": 0.565,
+"pk": 0.045,
+"g": 0.136,
+"lp": 700,
+"rate": 1.49
+},
+{
+"f": "sfx/handle.mp3",
+"t": 0.64,
+"pk": 0.11,
+"g": 0.55
+},
+{
+"f": "sfx/swing.mp3",
+"t": 0.8,
+"pk": 0.45,
+"g": 0.18,
+"lp": 2500
+},
+{
+"f": "sfx/double_dull.mp3",
+"t": 0.86,
+"pk": 0.045,
+"g": 0.45,
+"rate": 0.8
+},
+{
+"f": "sfx/thud.mp3",
+"t": 0.92,
+"pk": 0.07,
+"g": 1.006,
+"lp": null,
+"rate": 1.29
+},
+{
+"f": "sfx/double_dull.mp3",
+"t": 0.925,
+"pk": 0.045,
+"g": 0.332,
+"lp": null,
+"rate": 1.56
+},
+{
+"f": "sfx/thud.mp3",
+"t": 1.1,
+"pk": 0.07,
+"g": 0.843,
+"lp": null,
+"rate": 1.34
+},
+{
+"f": "sfx/double_dull.mp3",
+"t": 1.105,
+"pk": 0.045,
+"g": 0.332,
+"lp": null,
+"rate": 1.65
+},
+{
+"f": "sfx/thud.mp3",
+"t": 1.27,
+"pk": 0.07,
+"g": 0.932,
+"lp": null,
+"rate": 1.37
+},
+{
+"f": "sfx/double_dull.mp3",
+"t": 1.275,
+"pk": 0.045,
+"g": 0.332,
+"lp": null,
+"rate": 1.57
+},
+{
+"f": "sfx/latch.mp3",
+"t": 1.62,
+"pk": 0.225,
+"g": 0.7
+},
+{
+"f": "sfx/thud.mp3",
+"t": 3.45,
+"pk": 0.07,
+"g": 0.52,
+"lp": null,
+"rate": 1.38
+},
+{
+"f": "sfx/double_dull.mp3",
+"t": 3.455,
+"pk": 0.045,
+"g": 0.21,
+"lp": null,
+"rate": 1.54
+},
+{
+"f": "sfx/thud.mp3",
+"t": 3.74,
+"pk": 0.07,
+"g": 0.666,
+"lp": null,
+"rate": 1.16
+},
+{
+"f": "sfx/double_dull.mp3",
+"t": 3.745,
+"pk": 0.045,
+"g": 0.252,
+"lp": null,
+"rate": 1.65
+},
+{
+"f": "sfx/thud.mp3",
+"t": 3.99,
+"pk": 0.07,
+"g": 0.813,
+"lp": null,
+"rate": 1.37
+},
+{
+"f": "sfx/double_dull.mp3",
+"t": 3.995,
+"pk": 0.045,
+"g": 0.294,
+"lp": null,
+"rate": 1.65
+},
+{
+"f": "sfx/thud.mp3",
+"t": 4.21,
+"pk": 0.07,
+"g": 0.987,
+"lp": null,
+"rate": 1.43
+},
+{
+"f": "sfx/double_dull.mp3",
+"t": 4.215,
+"pk": 0.045,
+"g": 0.336,
+"lp": null,
+"rate": 1.46
+},
+{
+"f": "sfx/thud.mp3",
+"t": 4.42,
+"pk": 0.07,
+"g": 1.134,
+"lp": null,
+"rate": 1.28
+},
+{
+"f": "sfx/double_dull.mp3",
+"t": 4.425,
+"pk": 0.045,
+"g": 0.378,
+"lp": null,
+"rate": 1.67
+},
+{
+"f": "sfx/double_dull.mp3",
+"t": 4.62,
+"pk": 0.045,
+"g": 0.6,
+"rate": 1.9
+}
+]
