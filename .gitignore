@@ -1,0 +1,21 @@
+__pycache__/
+*.pyc
+# midia de trabalho nunca vai para o repositorio (criativos de terceiros, avatares, narracoes, renders)
+*.mp4
+*.mov
+*.mkv
+*.webm
+*.wav
+*.mp3
+*.m4a
+render_*/
+_selftest/
+projetos/
+referencias/
+# segredos
+.env
+*token*.json
+*client*.json
+*secret*
+# baixados pelo setup
+fonts/*.ttf

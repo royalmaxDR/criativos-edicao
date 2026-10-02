@@ -1,0 +1,26 @@
+{
+ "name": "cinematico_revelacao",
+ "desc": "Extraido do criativo de referencia (apresentador + b-roll, tom de misterio/revelacao): tela dividida alternando com closes, 4 transicoes fortes, base grave.",
+ "layouts": ["split", "full"],
+ "pacing": {"open_with": "split", "split_run_s": [5.0, 9.5], "broll_swap_s": [1.6, 2.8], "full_run_s": [2.8, 6.5], "full_cut_s": [1.3, 3.4]},
+ "shots": {
+  "sequence": ["medium", "close"],
+  "levels": {"wide": {"zoom": 1.0}, "medium": {"zoom": 1.18}, "close": {"zoom": 1.42}, "xclose": {"zoom": 1.5}},
+  "split": {}
+ },
+ "fx": {
+  "split>full": ["C", "A", "B"],
+  "full>full": ["A", "B"],
+  "full>split": ["D"],
+  "split>split": ["bsw"],
+  "broll>broll": ["bsw"]
+ },
+ "cta": {"last_s": 4.0, "shot": "wide", "banner": "TOQUE NO BOTÃO ABAIXO"},
+ "plan": {
+  "camera": {"split_zoom": 1.30, "split_face_y": 0.20, "pan": 0.035, "pan_period": 9.0, "breath": 0.012, "overshoot": 0.10, "overshoot_tau": 0.11,
+             "pull_out": 0.05, "push_in": 0.035, "anticipation": 0.13, "shake": 1.6, "diffusion": 0.16},
+  "look": {"broll_grade": "frio", "vignette": 0.72, "chroma": 2, "contrast": 1.07, "lift": 12, "grain": 3.2},
+  "captions": {"style": "box", "max_chars": 14, "max_words": 2, "uppercase": true, "size": 74, "box_color": [200, 16, 24]},
+  "audio": {"bed": "synth", "bed_rms": 0.036, "sfx": true}
+ }
+}

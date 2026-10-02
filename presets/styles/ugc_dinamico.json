@@ -1,0 +1,15 @@
+{
+ "name": "ugc_dinamico",
+ "desc": "Ponto de partida (nao extraido de referencia): apresentador quase sempre em tela cheia, cortes secos com soco de zoom/flash/whip, cor quente, sem base grave.",
+ "layouts": ["full", "split"],
+ "pacing": {"open_with": "full", "split_run_s": [3.0, 5.0], "broll_swap_s": [1.4, 2.2], "full_run_s": [6.0, 11.0], "full_cut_s": [1.6, 3.2]},
+ "shots": {"sequence": ["wide", "medium", "wide", "close"], "levels": {"wide": {"zoom": 1.0}, "medium": {"zoom": 1.15}, "close": {"zoom": 1.32}}, "split": {}},
+ "fx": {"split>full": ["whip", "flash"], "full>full": ["punch", "punch", "flash", "shake"], "full>split": ["whip"], "split>split": ["bsw"]},
+ "cta": {"last_s": 3.5, "shot": "medium", "banner": "TOQUE NO BOTÃO ABAIXO"},
+ "plan": {
+  "camera": {"overshoot": 0.04, "pull_out": 0.0, "push_in": 0.03, "anticipation": 0.0, "shake": 2.4, "diffusion": 0.0, "pan": 0.02},
+  "look": {"lut": "luts/quente_filme.cube", "lut_strength": 0.7, "broll_grade": "none", "vignette": 0.30, "chroma": 0, "contrast": 1.03, "lift": 4, "grain": 1.5},
+  "captions": {"style": "color", "max_chars": 16, "max_words": 3, "size": 70, "key_color": [255, 214, 0]},
+  "audio": {"bed": "none", "sfx": true, "sfx_gain": 0.8}
+ }
+}

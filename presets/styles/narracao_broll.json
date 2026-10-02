@@ -1,0 +1,14 @@
+{
+ "name": "narracao_broll",
+ "desc": "So narracao sobre b-roll em tela cheia (sem apresentador), com as mesmas transicoes e base grave do estilo cinematico.",
+ "layouts": ["broll"],
+ "pacing": {"open_with": "broll", "split_run_s": [6.0, 11.0], "broll_swap_s": [1.8, 3.2], "full_run_s": [3, 6], "full_cut_s": [1.5, 3.5]},
+ "shots": {"sequence": ["medium"], "levels": {"medium": {"zoom": 1.18}}},
+ "fx": {"broll>broll": ["bsw", "bsw", "A", "bsw", "leak", "bsw", "C"], "full>full": ["A"]},
+ "cta": {},
+ "plan": {
+  "look": {"broll_grade": "frio", "vignette": 0.72, "grain": 3.2},
+  "captions": {"style": "box", "max_chars": 14, "max_words": 2, "y_full": 0.62},
+  "audio": {"bed": "synth", "sfx": true}
+ }
+}
