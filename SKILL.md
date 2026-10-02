@@ -125,3 +125,7 @@ Efeitos saturados demais ficam amadores: a referência usa arco-íris a 14–22%
 - Fala de pânico: motor expressivo com marcas (`[panicked, fast, out of breath]`) e `speed 1.2`; corte pausas com `silenceremove`. A fala começa logo depois da batida da porta.
 - Para legenda no hook, renderize o hook como segmento `broll` com `kb: 0`, `grade: none`, sem vinheta/grão, e emende antes do corpo; o corpo abre com efeito `C` (continua a "queda de sinal").
 - Fonte mole (vídeo de 720p ampliado): zoom máximo ~1,45x, `diffusion: 0`, `look.ffmpeg_vf: "unsharp=5:5:0.75:5:5:0"`, grão 1,6.
+- Voz: meça a referência (`voice_fx.py --stats`) e escolha no banco a voz pública mais próxima em tom; nunca clone voz de anúncio de terceiros. No SL: referência ~93 Hz → Yuri (106 Hz) com `--preset imponente` (≈100 Hz).
+- Lip-sync: suba a cena e a fala alinhada no tempo (silêncio antes, `adelay`) e use `create_lipsync` em modo `precision`, `enableDynamicDuration: false`. A fala começa logo depois da porta; o rosto só aparece depois, então o sincronismo vale onde importa.
+- Porta: impactos reais do banco de efeitos do HeyGen (`search_audio_sounds`, tipo `sound_effects`) via `--door-sfx arquivo:pico:ganho`, com ganho alto e `--voice-gain 0.7` para a batida soar mais forte que a voz; chiado com `--static-sfx`.
+

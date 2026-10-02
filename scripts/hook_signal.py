@@ -44,6 +44,9 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("scene"); ap.add_argument("speech"); ap.add_argument("--out", default="hook.mp4"); ap.add_argument("--door", type=float, required=True)
     ap.add_argument("--speech-at", dest="speech_at", type=float, required=True); ap.add_argument("--glitch", default=""); ap.add_argument("--tempo", type=float, default=1.0)
+    ap.add_argument("--door-sfx", nargs="*", default=[], help="arquivos reais de impacto para a porta, formato arquivo:pico_s:ganho (ex. impacto.mp3:0.09:1.0)")
+    ap.add_argument("--static-sfx", nargs="*", default=[], help="arquivos de chiado/glitch, formato arquivo:pico_s:ganho; alternam entre as quedas de sinal")
+    ap.add_argument("--voice-gain", dest="voice_gain", type=float, default=0.7, help="volume da fala (a porta precisa soar mais alta que a voz)")
     ap.add_argument("--dur", type=float, default=10.0); ap.add_argument("--scene-gain", type=float, default=0.0, help="volume do audio original da cena (0 = mudo)")
     a = ap.parse_args(); rs = np.random.RandomState(7)
     G = [float(x) for x in a.glitch.split(",") if x.strip()]
@@ -90,16 +93,29 @@ def main():
     if abs(a.tempo - 1) > 1e-3:
         tmp = a.out + ".sp.wav"; subprocess.run(["ffmpeg", "-v", "error", "-y", "-i", a.speech, "-af", f"atempo={a.tempo}", "-ac", "1", "-ar", str(SR), tmp], check=True)
         sp = rd(tmp); os.remove(tmp)
-    i0 = int(a.speech_at * SR); j = min(N, i0 + len(sp)); mix[i0:j] += sp[:j - i0] * 0.95
+    i0 = int(a.speech_at * SR); j = min(N, i0 + len(sp)); mix[i0:j] += sp[:j - i0] * a.voice_gain
     if a.scene_gain:
         sc = rd(a.scene)[:N]; mix[:len(sc)] += sc * a.scene_gain
-    d = door_slam(rs); i = int(a.door * SR); j = min(N, i + len(d)); mix[i:j] += d[:j - i] * 0.95
+    def place(spec, t0, default_gain):
+        f, pk, g = (spec.split(":") + ["0", str(default_gain)])[:3] if spec.count(":") < 2 else spec.rsplit(":", 2)
+        x = rd(f); i = int((t0 - float(pk)) * SR); x = x[max(0, -i):]; i = max(0, i); j = min(N, i + len(x)); mix[i:j] += x[:j - i] * float(g)
+    if a.door_sfx:                                                                                        # porta: camadas de impactos reais + estalo do trinco
+        for spec in a.door_sfx:
+            place(spec, a.door, 1.0)
+        d = door_slam(rs); i = int(a.door * SR); j = min(N, i + len(d)); mix[i:j] += d[:j - i] * 0.30
+        sw = static(int(0.22 * SR), rs) * np.linspace(0, 1, int(0.22 * SR)) ** 2 * 0.06                 # ar da porta vindo antes do impacto
+        i = int((a.door - 0.22) * SR); mix[i:i + len(sw)] += sw[:max(0, min(len(sw), N - i))]
+    else:
+        d = door_slam(rs); i = int(a.door * SR); j = min(N, i + len(d)); mix[i:j] += d[:j - i] * 0.95
     b = breath(int(4.5 * SR), rs); i = int(max(0, a.door - 1.6) * SR); j = min(N, i + len(b)); mix[i:j] += b[:j - i] * 0.10      # ofegante na corrida
     for g in G:
         n = int(0.4 * SR); s = static(n, rs) * np.concatenate([np.linspace(0.3, 1, n // 4), np.ones(n - n // 4)]); i = int(g * SR); j = min(N, i + n)
         mix[i:j] = mix[i:j] * 0.35 + s[:j - i] * 0.30                                                     # chiado engole a voz por um instante
+    for k, g in enumerate(G):
+        if a.static_sfx:
+            place(a.static_sfx[k % len(a.static_sfx)], g + 0.05, 0.6)
     lo = np.convolve(rs.randn(N), np.ones(200) / 200, "same").astype(np.float32); mix += lo / (np.abs(lo).max() + 1e-9) * 0.02    # zumbido do quarto
-    mix = np.clip(mix, -1, 1); aw = a.out + ".a.wav"; o = wave.open(aw, "w"); o.setnchannels(1); o.setsampwidth(2); o.setframerate(SR); o.writeframes((mix * 32767).astype(np.int16).tobytes()); o.close()
+    mix = np.tanh(mix * 1.15) / np.tanh(1.15); aw = a.out + ".a.wav"; o = wave.open(aw, "w"); o.setnchannels(1); o.setsampwidth(2); o.setframerate(SR); o.writeframes((mix * 32767).astype(np.int16).tobytes()); o.close()
     subprocess.run(["ffmpeg", "-v", "error", "-y", "-i", tmpv, "-i", aw, "-map", "0:v", "-map", "1:a", "-c:v", "copy", "-c:a", "aac", "-b:a", "192k", "-ac", "2", "-shortest",
                     "-map_metadata", "-1", "-movflags", "+faststart", a.out], check=True)
     os.remove(tmpv); os.remove(aw); print("ok ->", a.out)
