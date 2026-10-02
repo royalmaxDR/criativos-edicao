@@ -79,9 +79,9 @@ def timeline(plan):
 
 
 def pick_encoder(pref="auto"):
-    table = {"nvenc": ("h264_nvenc", ["-preset", "p4", "-cq", "19", "-b:v", "0"]),
+    table = {"nvenc": ("h264_nvenc", ["-preset", "p5", "-cq", "17", "-b:v", "0"]),
              "videotoolbox": ("h264_videotoolbox", ["-q:v", "62"]),
-             "x264": ("libx264", ["-preset", "medium", "-crf", "18"])}
+             "x264": ("libx264", ["-preset", "medium", "-crf", "17"])}
     order = ["nvenc", "videotoolbox", "x264"] if pref == "auto" else [pref]
     for k in order:
         name, args = table[k]
@@ -92,9 +92,9 @@ def pick_encoder(pref="auto"):
 
 
 def enc_proc(out, W, H, fps, enc, vf):
-    table = {"nvenc": ["-c:v", "h264_nvenc", "-preset", "p4", "-cq", "19", "-b:v", "0"],
+    table = {"nvenc": ["-c:v", "h264_nvenc", "-preset", "p5", "-cq", "17", "-b:v", "0"],
              "videotoolbox": ["-c:v", "h264_videotoolbox", "-q:v", "62"],
-             "x264": ["-c:v", "libx264", "-preset", "medium", "-crf", "18"]}
+             "x264": ["-c:v", "libx264", "-preset", "medium", "-crf", "17"]}
     cmd = ["ffmpeg", "-v", "error", "-y", "-f", "rawvideo", "-pix_fmt", "bgr24", "-s", f"{W}x{H}", "-r", str(fps), "-i", "-"]
     if vf:
         cmd += ["-vf", vf]
@@ -221,7 +221,7 @@ class Avatar:
 
     def view(self, fr, zoom, cy_out, dx=0.0, dy=0.0):
         W, H = self.W, self.H; s = self.cover * zoom; iw, ih = max(W, int(self.aw * s)), max(H, int(self.ah * s))
-        im = cv2.resize(fr, (iw, ih), interpolation=cv2.INTER_LINEAR)
+        im = cv2.resize(fr, (iw, ih), interpolation=cv2.INTER_CUBIC if s > 1 else cv2.INTER_AREA)      # ampliacao em cubico: menos borrado que linear
         cx = int(self.fx * iw + dx); cy = int(self.fy * ih + dy)
         x0 = min(max(cx - W // 2, 0), iw - W); y0 = min(max(cy - int(H * cy_out), 0), ih - H)
         return im[y0:y0 + H, x0:x0 + W].astype(np.float32)

@@ -19,6 +19,7 @@ Primeira vez numa máquina: `python scripts/setup.py` e depois `python scripts/s
 | 5. B-roll | `scripts/broll_commons.py` (domínio público) ou arquivos próprios | buscas | `broll/*.jpg` + `_fontes.json` |
 | 6. Plano | `scripts/make_plan.py --words … --style …` | tudo acima | `plan.json` (rascunho) |
 | 7. Render | `scripts/render.py plan.json [--preview 0-12]` | plano | `NOME LEGENDA.mp4` + `NOME SEM LEGENDA.mp4` |
+| Hook encenado (opcional) | HeyGen `text_to_video` (9:16, 10 s) + `scripts/hook_signal.py cena.mp4 fala.wav --door T --speech-at T --glitch T1,T2` | cena gerada + fala | hook 1080x1920 com porta batendo, chiado/queda de sinal, pronto para emendar |
 
 Um pedido de "replique a edição com esta copy" = etapas 2 a 7. Um pedido de "analise a edição" = etapa 1.
 Um pedido de "recrie este criativo" = etapa 1 (com `--transcribe` para pegar a copy) + 2 a 7.
@@ -115,3 +116,12 @@ Efeitos saturados demais ficam amadores: a referência usa arco-íris a 14–22%
 - Render longo num processo só estoura limite de tempo de agentes: por isso o render é dividido (`--jobs`).
 - Rosto do avatar fora do centro: informe `"avatar_face": [x, y, largura]` (frações do quadro) no plano se o detector errar; o render imprime o que detectou.
 - Voz "mais imponente" não é só baixar o tom: meça com `--stats`; em geral é entonação (pontuação, motor expressivo) + corpo em 110 Hz + compressão.
+
+## Hook encenado gerado por IA (aprendido no SL)
+
+- Peça a cena **do ponto de vista do próprio celular** e escreva "nenhum celular aparece no quadro"; sem isso o modelo mostra um celular em primeiro plano.
+- Divida a cena por segundos no prompt (0–3 entra e bate a porta; 3–5 vem até a câmera e pega; 5–10 selfie tremida falando). 10 s em 768p, `promptEnhancement: quality`.
+- O áudio gerado pela cena vem mudo para nós (`--scene-gain 0`): fala, porta, respiração e chiado são montados pelo `hook_signal.py`.
+- Fala de pânico: motor expressivo com marcas (`[panicked, fast, out of breath]`) e `speed 1.2`; corte pausas com `silenceremove`. A fala começa logo depois da batida da porta.
+- Para legenda no hook, renderize o hook como segmento `broll` com `kb: 0`, `grade: none`, sem vinheta/grão, e emende antes do corpo; o corpo abre com efeito `C` (continua a "queda de sinal").
+- Fonte mole (vídeo de 720p ampliado): zoom máximo ~1,45x, `diffusion: 0`, `look.ffmpeg_vf: "unsharp=5:5:0.75:5:5:0"`, grão 1,6.
