@@ -255,7 +255,7 @@ class Broll:
             raise SystemExit(f"nao consegui ler o b-roll: {path}")
         return v["fr"]
 
-    def get(self, path, p, kz, t, tloc, tw, th, kb=1):
+    def get(self, path, p, kz, t, tloc, tw, th, kb=1, grade=None):
         if path in ("WAVE", "gen:wave"):
             return self.wave(t, tw, th)
         if path.lower().endswith(VIDEO_EXT):
@@ -274,7 +274,7 @@ class Broll:
         z = (1.0 + 0.12 * pp * (1 if kb else 0)) * kz; cw = min(bw, int(bw / (1.25 * z))); ch = min(int(cw * th / tw), bh)
         x0 = int((bw - cw) / 2 + (bw - cw) * 0.10 * (pp - 0.5)); y0 = int(max(0, (bh - ch) * (0.30 + 0.15 * pp)))
         crop = cv2.resize(im[y0:y0 + ch, x0:x0 + cw], (tw, th), interpolation=cv2.INTER_LINEAR).astype(np.float32)
-        return LOOK.grade_broll(crop, self.grade)
+        return LOOK.grade_broll(crop, self.grade if grade is None else grade)
 
 
 def shot_class(seg, av):
@@ -331,7 +331,7 @@ def render_range(plan, F0, F1, tmp, enc):
                 kz = 1.0; bsig = 0
                 if prev == "split" and dt0 < 0.2:
                     kz = 1 + 0.18 * (1 - dt0 / 0.2) ** 2; bsig = 9 * S * (1 - dt0 / 0.2)
-                bimg = br.get(seg["broll"], p, kz, t, dt0, W, BH, seg.get("kb", 1))
+                bimg = br.get(seg["broll"], p, kz, t, dt0, W, BH, seg.get("kb", 1), seg.get("grade"))
                 if bsig > 0.3:
                     bimg = cv2.GaussianBlur(bimg, (0, 0), bsig)
                 bot = np.zeros((H, W, 3), np.float32); bot[H - BH:] = bimg * BV; img = (top * (1 - alpha) + bot * alpha) * SEAMDARK
@@ -340,7 +340,7 @@ def render_range(plan, F0, F1, tmp, enc):
                 kz = 1.0; bsig = 0
                 if prev == "broll" and dt0 < 0.2:
                     kz = 1 + 0.18 * (1 - dt0 / 0.2) ** 2; bsig = 9 * S * (1 - dt0 / 0.2)
-                img = br.get(seg["broll"], p, kz, t, dt0, W, H, seg.get("kb", 1)); img = c.shift(img, sx, sy) if cam["shake"] else img
+                img = br.get(seg["broll"], p, kz, t, dt0, W, H, seg.get("kb", 1), seg.get("grade")); img = c.shift(img, sx, sy) if cam["shake"] else img
                 if bsig > 0.3:
                     img = cv2.GaussianBlur(img, (0, 0), bsig)
                 cap_y = int(H * plan["captions"]["y_full"])
@@ -410,12 +410,13 @@ def validate(plan):
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("plan"); ap.add_argument("--jobs", type=int, default=3); ap.add_argument("--preview", help="trecho em segundos, ex. 0-12")
+    ap.add_argument("plan"); ap.add_argument("--jobs", type=int, default=max(2, (os.cpu_count() or 4) // 2), help="processos paralelos (padrao: metade das threads da CPU)"); ap.add_argument("--preview", help="trecho em segundos, ex. 0-12")
     ap.add_argument("--encoder", default="auto", choices=["auto", "nvenc", "videotoolbox", "x264"]); ap.add_argument("--out", help="pasta de saida (padrao: a do plano)")
     ap.add_argument("--keep", action="store_true", help="nao apagar os pedacos temporarios"); ap.add_argument("--check", action="store_true", help="so validar o plano")
     ap.add_argument("--worker", nargs=2, type=int, help=argparse.SUPPRESS); ap.add_argument("--tmp", help=argparse.SUPPRESS)
     a = ap.parse_args(); plan = load_plan(a.plan)
     if a.worker:
+        cv2.setNumThreads(2)                                              # cada processo usa 2 threads: os N processos dividem a CPU sem disputa
         render_range(plan, a.worker[0], a.worker[1], a.tmp, a.encoder); return
     FXM.load_plugins(); errs = validate(plan)
     if errs:

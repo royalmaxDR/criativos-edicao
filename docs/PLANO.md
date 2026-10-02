@@ -53,6 +53,7 @@ O plano descreve o vídeo inteiro. Caminhos relativos valem a partir da pasta do
 | `face_w` | alternativa ao `zoom`: largura do rosto ÷ largura do quadro (0.46 aberto, 0.52 médio, 0.57 close) — é a medida que o `extract_style.py` devolve, então serve para copiar a referência com qualquer avatar |
 | `shot` | `wide` / `medium` / `close`: muda o comportamento da câmera (close = recuo lento + difusão; os outros = avanço lento) |
 | `kb` | b-roll: `1` aproxima (padrão), `-1` afasta, `0` parado |
+| `grade` | b-roll: tratamento só neste segmento (`frio`, `quente`, `pb`, `none`). `kb: 0` + `grade: none` com um vídeo = trecho original intacto (ex.: manter o hook de outro criativo) |
 | `cap_y` | altura da legenda só neste segmento (fração da altura) |
 | `say` | texto falado no trecho (só anotação para quem revisa) |
 
