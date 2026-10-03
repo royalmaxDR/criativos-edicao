@@ -29,6 +29,8 @@ python scripts/voice_fx.py vo_raw.wav vo.wav --preset imponente
 python scripts/transcribe.py vo.wav --out words.json --lang pt
 python scripts/broll_commons.py --out broll "q01=Dead Sea Scrolls" "q02=gold coins pile"
 python scripts/make_plan.py --words words.json --voice vo.wav --avatar avatar.mp4 --broll broll --style cinematico_revelacao --name "OFERTA-01 v1" --out plan.json
+python scripts/sheet.py broll
+python scripts/assign_broll.py plan.json --map mapa.json --broll broll --max-shot 2.4
 python scripts/render.py plan.json --check
 python scripts/render.py plan.json --preview 0-12
 python scripts/render.py plan.json --jobs 4

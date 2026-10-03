@@ -19,7 +19,9 @@ Primeira vez numa máquina: `python scripts/setup.py` e depois `python scripts/s
 | 5. B-roll | `scripts/broll_commons.py` (domínio público) ou arquivos próprios | buscas | `broll/*.jpg` + `_fontes.json` |
 | 6. Plano | `scripts/make_plan.py --words … --style …` | tudo acima | `plan.json` (rascunho) |
 | 6b. Casar b-roll | `scripts/assign_broll.py plan.json --map mapa.json --broll broll` (+ `scripts/sheet.py broll`) | plano + mapa palavra→imagem | plano com imagens casadas e trocas mais rápidas |
+| Cortar trecho do original (opcional) | `scripts/cut_ranges.py original.mp4 --remove A-B --out pasta` | criativo com a voz original | `avatar.mp4` + `vo.wav` sem o trecho |
 | 7. Render | `scripts/render.py plan.json [--preview 0-12]` | plano | `NOME LEGENDA.mp4` + `NOME SEM LEGENDA.mp4` |
+| Emendar (opcional) | `scripts/splice.py saida.mp4 hook.mp4 corpo.mp4` | clipes prontos | um vídeo só, sem re-render |
 | Hook encenado (opcional) | HeyGen `text_to_video` (9:16, 10 s) + `scripts/hook_signal.py cena.mp4 fala.wav --door T --speech-at T --glitch T1,T2` | cena gerada + fala | hook 1080x1920 com porta batendo, chiado/queda de sinal, pronto para emendar |
 
 Um pedido de "replique a edição com esta copy" = etapas 2 a 7. Um pedido de "analise a edição" = etapa 1.
@@ -148,7 +150,7 @@ Efeitos saturados demais ficam amadores: a referência usa arco-íris a 14–22%
 **Manter um trecho do original (hook de react, apresentador original)**
 - Segmento `broll` com o vídeo original, `kb: 0`, `grade: "none"` = quadro intacto. Quem fala naquele trecho precisa aparecer: se a frase é de outra pessoa (react), mostre ela, não o avatar mexendo a boca com a voz dela.
 - Recorte do próprio vídeo como cena sincronizada: `"sync": true` (usa o tempo absoluto, mantém o lip-sync). Serve para fechar o enquadramento no rosto e deixar **legendas/setas queimadas** do original fora do quadro.
-- Tirar um trecho da narração mantendo a voz original: corte o intervalo no áudio **e** no vídeo com `trim/atrim + concat`, com `afade` de 0,1 s nas emendas, e retranscreva.
+- Tirar um trecho da narração mantendo a voz original: `python scripts/cut_ranges.py original.mp4 --remove 60.25-102.35 --end 109.3 --out projetos/x --transcribe --lang pt` (corta áudio e vídeo juntos, com fade nas emendas, e já entrega `avatar.mp4`, `vo.wav` e `words.json`). Corte nos silêncios entre frases.
 
 **Tradução (PT → EN e outras)**
 - Reescreva a copy em língua nativa (não literal), gere a narração com voz nativa de tom parecido, refaça o lip-sync dos avatares e os textos fixos (`banners`, `end_card`).
@@ -157,7 +159,7 @@ Efeitos saturados demais ficam amadores: a referência usa arco-íris a 14–22%
 
 **Velocidade**
 - `--jobs 6` numa CPU de 12 threads. **Não rode dois renders ao mesmo tempo**: a placa limita as sessões de codificação (erro "Error while opening encoder" no NVENC); rode em sequência. O mesmo vale para `process.py --gpu` durante um render: use CPU ou espere.
-- Mudou só o começo? Renderize `--preview 0-T` (T num corte de segmento) e emende com o render antigo a partir de T (`trim=start=T` + `concat`), em vez de renderizar tudo de novo.
+- Mudou só o começo? Renderize `--preview 0-T` (T num corte de segmento) e emende: `python scripts/splice.py saida.mp4 "previa.mp4:0:T" "render_antigo.mp4:T:"`. O mesmo script junta hook + corpo.
 - Espera de serviços externos (HeyGen): monte planos, imagens e sons enquanto isso.
 
 **Copy**

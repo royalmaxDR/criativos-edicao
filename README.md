@@ -70,6 +70,7 @@ scripts/
   broll_commons.py       b-roll em domínio público             make_luts.py     gera as LUTs
   assign_broll.py        casa b-roll com a fala e divide planos  sheet.py         folha de contato das imagens
   hook_signal.py         hook encenado: sons sincronizados e queda de sinal
+  cut_ranges.py          remove trechos mantendo a voz original  splice.py        emenda clipes / refaz so o comeco
 presets/styles/          estilos prontos (cinematico_revelacao, ugc_dinamico, narracao_broll, narracao_dinamica)
 plugins/                 efeitos extras (um .py = um efeito)
 luts/                    LUTs .cube
