@@ -8,6 +8,8 @@ description: Aprende, analisa e extrai o estilo de edição de qualquer criativo
 Tudo roda local, por linha de comando, a partir da pasta desta skill. Não usa CapCut, Premiere nem After Effects.
 Primeira vez numa máquina: `python scripts/setup.py` e depois `python scripts/selftest.py` (deve terminar com `SELFTEST OK`). Instalação detalhada: `INSTALL.md`.
 
+**Retomando um trabalho antigo?** Leia primeiro `docs/HISTORICO.md` (o que foi feito e decidido) e, se existir, `projetos/REGISTRO.md` (links do canal, IDs de avatar/voz, pastas e pendências — arquivo local, fora do repositório).
+
 ## Mapa
 
 | Etapa | Script | Entra | Sai |
