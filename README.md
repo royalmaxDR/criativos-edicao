@@ -68,7 +68,9 @@ scripts/
   look.py                LUT, cor, acabamento                  audio_engine.py  base grave + efeitos sonoros
   voice_fx.py            tratamento e medição da voz           transcribe.py    tempos por palavra
   broll_commons.py       b-roll em domínio público             make_luts.py     gera as LUTs
-presets/styles/          estilos prontos (cinematico_revelacao, ugc_dinamico, narracao_broll)
+  assign_broll.py        casa b-roll com a fala e divide planos  sheet.py         folha de contato das imagens
+  hook_signal.py         hook encenado: sons sincronizados e queda de sinal
+presets/styles/          estilos prontos (cinematico_revelacao, ugc_dinamico, narracao_broll, narracao_dinamica)
 plugins/                 efeitos extras (um .py = um efeito)
 luts/                    LUTs .cube
 models/                  detector de rosto YuNet

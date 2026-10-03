@@ -18,6 +18,7 @@ Primeira vez numa máquina: `python scripts/setup.py` e depois `python scripts/s
 | 4. Apresentador | HeyGen (ou vídeo gravado) com o **mesmo áudio** | `vo.wav` | `avatar.mp4` |
 | 5. B-roll | `scripts/broll_commons.py` (domínio público) ou arquivos próprios | buscas | `broll/*.jpg` + `_fontes.json` |
 | 6. Plano | `scripts/make_plan.py --words … --style …` | tudo acima | `plan.json` (rascunho) |
+| 6b. Casar b-roll | `scripts/assign_broll.py plan.json --map mapa.json --broll broll` (+ `scripts/sheet.py broll`) | plano + mapa palavra→imagem | plano com imagens casadas e trocas mais rápidas |
 | 7. Render | `scripts/render.py plan.json [--preview 0-12]` | plano | `NOME LEGENDA.mp4` + `NOME SEM LEGENDA.mp4` |
 | Hook encenado (opcional) | HeyGen `text_to_video` (9:16, 10 s) + `scripts/hook_signal.py cena.mp4 fala.wav --door T --speech-at T --glitch T1,T2` | cena gerada + fala | hook 1080x1920 com porta batendo, chiado/queda de sinal, pronto para emendar |
 
@@ -130,3 +131,35 @@ Efeitos saturados demais ficam amadores: a referência usa arco-íris a 14–22%
 - Porta: impactos reais do banco de efeitos do HeyGen (`search_audio_sounds`, tipo `sound_effects`) via `--door-sfx arquivo:pico:ganho`, com ganho alto e `--voice-gain 0.7` para a batida soar mais forte que a voz; chiado com `--static-sfx`.
 - Sincronia dos sons: ache o quadro exato com uma tira de 24 fps recortada na porta (a fresta de luz some = porta fechada) e passe `--door` nesse instante. Passos, maçaneta, trinco e o toque ao pegar o celular vão num `events.json` (`--events`): passos atrás da porta com `lp: 700` e ganho baixo, passos no quarto sem filtro, `rate` variando 1,15–1,45 para nenhum passo soar igual.
 
+
+## Variações, tradução e reaproveitamento (aprendido na leva SL / NASA / CHAMP / CV)
+
+**B-roll casado com a fala e mais dinâmica**
+- Depois do `make_plan.py`, rode `python scripts/assign_broll.py plan.json --map mapa.json --broll broll --max-shot 2.4`. O mapa é uma lista `[palavra, imagem]`; segmentos longos são divididos em dois com `bsw` no meio (média de ~1,8–2,3 s por imagem).
+- Escolha as imagens olhando: `python scripts/sheet.py broll` gera a folha de contato e lista imagens corrompidas. O Commons limita rajadas: faça as buscas em sequência, não em paralelo.
+- Só narração (sem avatar): `--style narracao_dinamica` + `assign_broll.py --max-shot 2.6`.
+
+**Variações de avatar com a mesma copy**
+- Antes de criar avatar, liste os da conta (`list_avatar_looks`, `ownership: private`) e monte uma folha com as prévias; criar custa mais que gerar vídeo.
+- Suba a narração uma vez (`create_asset_upload_batch` → PUT → `complete_asset_batch`) e gere um vídeo por avatar com `audioAssetId`, 9:16, 1080p. Mesmos tempos = o mesmo plano serve para todos, trocando só `avatar`.
+- Vozes clonadas na conta com nome de pregação/pessoa real: não usar. Escolha no banco pela medida de tom (`voice_fx.py --stats`).
+- Avatar novo por prompt: descreva personagem, enquadramento "do peito para cima, de frente, centralizado", fundo e luz, `aspectRatio 9:16`. A imagem leva ~5 min para ficar pronta; consulte `get_avatar_look` até `completed` antes de gerar o vídeo.
+
+**Manter um trecho do original (hook de react, apresentador original)**
+- Segmento `broll` com o vídeo original, `kb: 0`, `grade: "none"` = quadro intacto. Quem fala naquele trecho precisa aparecer: se a frase é de outra pessoa (react), mostre ela, não o avatar mexendo a boca com a voz dela.
+- Recorte do próprio vídeo como cena sincronizada: `"sync": true` (usa o tempo absoluto, mantém o lip-sync). Serve para fechar o enquadramento no rosto e deixar **legendas/setas queimadas** do original fora do quadro.
+- Tirar um trecho da narração mantendo a voz original: corte o intervalo no áudio **e** no vídeo com `trim/atrim + concat`, com `afade` de 0,1 s nas emendas, e retranscreva.
+
+**Tradução (PT → EN e outras)**
+- Reescreva a copy em língua nativa (não literal), gere a narração com voz nativa de tom parecido, refaça o lip-sync dos avatares e os textos fixos (`banners`, `end_card`).
+- Reaproveite a pasta de imagens: basta um `mapa.json` com as palavras-chave do idioma novo.
+- Pessoa real filmada não entra na versão traduzida (não se põe pessoa real falando outra língua com a boca sincronizada); a fala dela passa para o avatar.
+
+**Velocidade**
+- `--jobs 6` numa CPU de 12 threads. **Não rode dois renders ao mesmo tempo**: a placa limita as sessões de codificação (erro "Error while opening encoder" no NVENC); rode em sequência. O mesmo vale para `process.py --gpu` durante um render: use CPU ou espere.
+- Mudou só o começo? Renderize `--preview 0-T` (T num corte de segmento) e emende com o render antigo a partir de T (`trim=start=T` + `concat`), em vez de renderizar tudo de novo.
+- Espera de serviços externos (HeyGen): monte planos, imagens e sons enquanto isso.
+
+**Copy**
+- Sem promessa de cura/saúde, sem fato falso sobre pessoa real identificável (nem "sem dizer o nome"), sem valor/prazo garantido. O que pode crescer é gancho, tensão, urgência e chamada. Prosperidade e fé seguem o padrão do SL, com aviso de risco de reprovação.
+- Texto que precisa mudar: proponha a troca mínima que muda a **promessa**, mantendo estrutura e ritmo; trocar só a palavra mantendo a promessa não resolve.

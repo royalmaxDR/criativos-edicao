@@ -1,0 +1,76 @@
+{
+ "name": "narracao_dinamica",
+ "desc": "Narracao sobre b-roll em tela cheia com troca rapida (1,3-2,2 s) e mistura variada de transicoes. Use com assign_broll.py --max-shot 2.6.",
+ "layouts": [
+  "broll"
+ ],
+ "pacing": {
+  "open_with": "broll",
+  "split_run_s": [
+   4,
+   7
+  ],
+  "broll_swap_s": [
+   1.3,
+   2.2
+  ],
+  "full_run_s": [
+   3,
+   6
+  ],
+  "full_cut_s": [
+   1.5,
+   3.5
+  ]
+ },
+ "shots": {
+  "sequence": [
+   "medium"
+  ],
+  "levels": {
+   "medium": {
+    "zoom": 1.18
+   }
+  }
+ },
+ "fx": {
+  "broll>broll": [
+   "bsw",
+   "A",
+   "bsw",
+   "whip",
+   "bsw",
+   "B",
+   "bsw",
+   "leak",
+   "bsw",
+   "C",
+   "bsw",
+   "punch",
+   "bsw",
+   "D",
+   "flash"
+  ],
+  "full>full": [
+   "A"
+  ]
+ },
+ "cta": {},
+ "plan": {
+  "look": {
+   "broll_grade": "frio",
+   "vignette": 0.72,
+   "grain": 3.2
+  },
+  "captions": {
+   "style": "box",
+   "max_chars": 14,
+   "max_words": 2,
+   "y_full": 0.62
+  },
+  "audio": {
+   "bed": "synth",
+   "sfx": true
+  }
+ }
+}
