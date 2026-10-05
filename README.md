@@ -98,3 +98,7 @@ Vídeos, áudios, criativos de terceiros, avatares, narrações, renders e qualq
 - A classificação automática de layout e de tipo de transição é um palpite; a decisão é de quem olha as tiras.
 - O agente não identifica pessoas reais pelo rosto e não reaproveita áudio/imagem/voz da referência no criativo novo.
 - Copy com promessa de cura ou fato inventado tem risco de reprovação nas plataformas: o agente sinaliza antes de narrar.
+
+
+## Pipeline de garimpagem + borrão de rostos
+Veja `criativos-pipeline/` (garimpar a Biblioteca de Anúncios, mapear rostos, borrão/mosaico, extensor opcional, verificação). Guia: `criativos-pipeline/README.md`.

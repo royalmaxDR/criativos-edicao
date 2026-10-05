@@ -1,0 +1,19 @@
+# dados de trabalho e midia nunca vao para o repositorio
+trabalho/
+work/
+*.mp4
+*.mov
+*.mkv
+*.webm
+*.jpg
+*.png
+!docs/*.jpg
+!docs/*.png
+# segredos
+.env
+*token*.json
+*credentials*.json
+# python
+__pycache__/
+*.pyc
+.cache/
