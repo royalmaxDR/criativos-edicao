@@ -11,7 +11,7 @@ ou por uma pessoa, copiando os comandos.
 Biblioteca de Anúncios ──► collect_ads.js ──► ads.json ──► fetch_media.py ──► vídeos limpos
                                                                   │
                          scan_faces.py (pessoas distintas) ◄──────┤
-                         lens_search.py (pistas de figura pública)│
+                         lens_search.py + triage.py (regra do nome) │
                                                                   ▼
               blur_pipeline.py  (borrão/mosaico + metadados + extensor opcional)  ──► verify.py ──► finais
 ```
@@ -24,7 +24,8 @@ Biblioteca de Anúncios ──► collect_ads.js ──► ads.json ──► fe
 | 1 | `scripts/collect_ads.js` | Roda **dentro da página** da biblioteca: rola, coleta ID, **data de início**, URL do vídeo e miniatura (PT/EN/ES) |
 | 2 | `scripts/fetch_media.py` | Escolhe os N **ativos há mais tempo** (ou mais impressos), remove duplicados, baixa em paralelo e **limpa metadados** |
 | 3a | `scripts/scan_faces.py` | Agrupa os rostos em **pessoas distintas** (recorte, quando e quanto tempo aparecem). Não identifica ninguém |
-| 3b | `scripts/lens_search.py` | (opcional) Envia os recortes ao Google Lens num Chrome real e salva as **pistas**; se houver CAPTCHA, você resolve |
+| 3b | `scripts/lens_search.py` | Envia os recortes ao Google Lens num Chrome real e marca cada um como `nomeou`/`sem_nome`/`pendente`; se houver CAPTCHA, você resolve |
+| 3c | `scripts/triage.py` | **Regra do projeto:** se o Lens citou *qualquer* nome para um rosto, os vídeos em que ele aparece vão para o borrão (`blur_plan.json`) |
 | 4 | `scripts/blur_pipeline.py` | Borra os rostos (`strong`/`mosaic`), limpa metadados, converte p/ 1080×1920 e, **se pedido**, anexa um extensor até a duração alvo |
 | 5 | `scripts/verify.py` | Confere duração, tamanho, decodificação, metadados e se ainda há rosto reconhecível |
 
@@ -56,10 +57,12 @@ e (só para `lens_search.py`) Google Chrome. Os modelos de rosto já vêm em `mo
    `python scripts/fetch_media.py trabalho/ads.json --top 10 --sort oldest --out trabalho/baixados`
 3. **Mapear rostos.** `python scripts/scan_faces.py --out trabalho/analise trabalho/baixados`
    (abra `analise/gallery_0.jpg` para ver as pessoas distintas).
-4. **(Opcional) Pistas de figura pública.**
-   `python scripts/lens_search.py --out trabalho/lens.md trabalho/analise/crops/P01.jpg trabalho/analise/crops/P02.jpg`
+4. **Lens + triagem (regra: "citou nome ⇒ borrar").**
+   `python scripts/lens_search.py --out trabalho/lens.md trabalho/analise/crops/P01.jpg trabalho/analise/crops/P02.jpg ...`
+   `python scripts/triage.py --faces trabalho/analise/report.json --lens trabalho/lens_veredito.json --out trabalho/blur_plan.json`
 5. **Borrar (e estender, se quiser).**
-   - Só borrão: `python scripts/blur_pipeline.py --out trabalho/finais --style strong trabalho/baixados`
+   - Borrar só onde o Lens citou nome: `python scripts/blur_pipeline.py --out trabalho/finais --style strong --plan trabalho/blur_plan.json trabalho/baixados`
+   - Borrar tudo: `python scripts/blur_pipeline.py --out trabalho/finais --style strong trabalho/baixados`
    - Borrão + extensor de 10 min:
      `python scripts/blur_pipeline.py --out trabalho/finais --style strong --extender meu_extensor.mp4 --target 600 trabalho/baixados`
 6. **Verificar.**
@@ -78,6 +81,7 @@ e (só para `lens_search.py`) Google Chrome. Os modelos de rosto já vêm em `mo
 | `--workers` | auto | Vídeos em paralelo (3 com GPU; metade dos núcleos na CPU) |
 | `--min-score` | `0.5` | Confiança mínima do detector de rosto. Menor = mais proteção (mais falsos alertas) |
 | `--step` / `--hold` | `2` / `0.6` | Detectar a cada N quadros; segundos que o efeito persiste sem detecção |
+| `--plan ARQ` | — | `blur_plan.json` do `triage.py`: borra só os vídeos sinalizados (os demais saem sem efeito, mas limpos/convertidos/estendidos) |
 | `--suffix` | `EXT10`/`final` | Sufixo do arquivo de saída |
 
 ### Como funciona por dentro (resumo)
@@ -90,15 +94,15 @@ e (só para `lens_search.py`) Google Chrome. Os modelos de rosto já vêm em `mo
 - **Desempenho medido (RTX 3060, 12 núcleos):** 7 criativos de 2–3 min → 10 min cada em ~3 min no total.
 
 ## Segurança e limites
-Leia `references/SAFETY_AND_LIMITS.md`. Em resumo: o pipeline **não identifica pessoas**; o padrão é **borrar todos
-os rostos**; CAPTCHA nunca é burlado; criativos de terceiros têm direitos autorais; o Lens fornece **pistas**, não provas.
+Leia `references/SAFETY_AND_LIMITS.md`. Em resumo: o pipeline **não identifica pessoas**; a regra é **"o Lens citou algum nome ⇒ borrar"**
+(borrar tudo é o modo conservador); CAPTCHA nunca é burlado; criativos de terceiros têm direitos autorais; o Lens fornece **pistas**, não provas.
 
 ## Estrutura
 ```
 SKILL.md                 instruções para o agente (formato Agent Skills)
 README.md                este arquivo
 requirements.txt
-scripts/                 setup_check.py collect_ads.js fetch_media.py scan_faces.py lens_search.py blur_pipeline.py verify.py
+scripts/                 setup_check.py collect_ads.js fetch_media.py scan_faces.py lens_search.py namecheck.py triage.py blur_pipeline.py verify.py
 models/                  yunet.onnx (detector) e sface.onnx (comparador) — ver models/README.md
 references/              WORKFLOW.md  SAFETY_AND_LIMITS.md  TROUBLESHOOTING.md
 ```

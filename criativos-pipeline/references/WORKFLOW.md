@@ -26,16 +26,25 @@ python $SK/scripts/fetch_media.py W/ads.json --top 10 --sort oldest --out W/baix
 - Duplicados (mesmo vídeo em anúncios diferentes) são agrupados; o relatório fica em `baixados/baixados.json`.
 - Saída: `<library_id>.mp4` sem metadados. As URLs do CDN **expiram** em horas: baixe logo após coletar.
 
-## 3. Rostos e figuras públicas
+## 3. Rostos, Lens e decisão de borrar
+**Regra do projeto:** se o Lens citar *qualquer* nome para o rosto (mesmo errado ou diferente a cada busca), o rosto é sensível e
+o vídeo vai para o borrão. O que importa é o Lens **não dar nome nenhum**.
 ```bash
 python $SK/scripts/scan_faces.py --out W/analise W/baixados
 ```
 Resultado: `report.json` (cada `Pxx`: segundos em tela, em quais vídeos/intervalos), `crops/Pxx.jpg`, `gallery_*.jpg`.
 
-Para pistas de identidade (opcional):
+Consulta ao Lens e triagem:
 ```bash
-python $SK/scripts/lens_search.py --out W/lens.md W/analise/crops/P01.jpg W/analise/crops/P02.jpg
+python $SK/scripts/lens_search.py --out W/lens.md W/analise/crops/P01.jpg W/analise/crops/P02.jpg ...
+python $SK/scripts/triage.py --faces W/analise/report.json --lens W/lens_veredito.json --out W/blur_plan.json
 ```
+- `lens_search.py` detecta se o resumo de IA do Lens **cita nome de pessoa** (`namecheck.py`: nome próprio logo após cargo/papel
+  como ator/bispo/jornalista, ou após "parece retratar"/"é o") e grava `nomeou | sem_nome | pendente`. É conservador: prefere
+  marcar a deixar passar. Confira `lens.md` quando o veredito for `sem_nome` em rostos importantes.
+- `pendente` = a busca falhou (sem resumo); é tratada como sensível até repetir. `nao_verificado` = pessoa não enviada ao Lens;
+  também borra por padrão.
+- `triage.py` cruza pessoas × vídeos e escreve `blur_plan.json`: vídeos a borrar e o motivo (pessoa, nome citado, minutagem).
 - Abre um Chrome visível. **Se pedir CAPTCHA, o usuário resolve**; o script aguarda (até 5 min por imagem).
 - Priorize: apresentadores principais, rostos em cortes de arquivo/TV, qualquer rosto com roupas/cenário institucional.
 - Recortes que pegam só óculos/objeto geram resultado inútil: refaça com o rosto centralizado.
@@ -50,6 +59,7 @@ nível de risco (alto/médio/baixo/inconclusivo) · trechos de arquivo sensívei
 python $SK/scripts/blur_pipeline.py --out W/finais --style strong W/baixados                         # sem extensor
 python $SK/scripts/blur_pipeline.py --out W/finais --style strong --extender EXT.mp4 --target 600 W/baixados   # com extensor
 ```
+- Com o plano: `--plan W/blur_plan.json` (só os vídeos sinalizados recebem o efeito). Sem `--plan`, todos os vídeos são borrados.
 - Mostre ao usuário **um** vídeo pronto antes de rodar o lote inteiro se ele ainda não aprovou o estilo.
 - `strong` (padrão) derrota reconhecimento por máquina; `mosaic` é o mais seguro e o mais "óbvio"; ambos cobrem todos os rostos.
 - O extensor só entra se o usuário pedir. Sem `--extender` o vídeo mantém a duração original.

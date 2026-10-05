@@ -9,6 +9,7 @@ Exemplos:
   python blur_pipeline.py --out saida --style mosaic criativo1.mp4 criativo2.mp4
   python blur_pipeline.py --out saida --style none --extender extensor.mp4 videos/   # so extensor + limpeza
 
+Com --plan blur_plan.json so os videos marcados (Lens citou nome) recebem o efeito.
 Estilos: strong (borrao horizontal forte olhos/nariz/boca, derrota reconhecimento facial),
          mosaic (pixelizacao quadrada, a mais segura), none (nao toca nos rostos).
 """
@@ -183,7 +184,10 @@ def work(args):
         cap = cv2.VideoCapture(vin)
         fps_in = cap.get(cv2.CAP_PROP_FPS) or 30.0
         W, H = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH)), int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-        effect = EFFECTS[opt["style"]]
+        style = opt["style"]
+        if opt.get("plan") is not None and not opt["plan"].get(stem, True):
+            style = "none"  # o plano diz que este video nao tem rosto sensivel
+        effect = EFFECTS[style]
         det = cv2.FaceDetectorYN.create(DET_MODEL, "", (W, H), opt["min_score"], 0.3, 5000) if effect else None
         step, hold = opt["step"], int(fps_in * opt["hold"])
         part = os.path.join(tmp, "part.mp4")
@@ -246,7 +250,7 @@ def work(args):
             subprocess.run([ff, "-v", "error", "-y", "-i", part, *cut, "-c", "copy", "-map_metadata", "-1",
                             "-fflags", "+bitexact", "-flags:v", "+bitexact", "-flags:a", "+bitexact",
                             "-movflags", "+faststart", out], check=True)
-        return {"input": vin, "output": out, "frames": n, "frames_with_effect": blurred,
+        return {"input": vin, "output": out, "style": style, "frames": n, "frames_with_effect": blurred,
                 "duration": round(duration_of(out), 3), "seconds": round(time.time() - t0, 1)}
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
@@ -280,6 +284,7 @@ def main():
     ap.add_argument("--step", type=int, default=2, help="detectar a cada N quadros")
     ap.add_argument("--hold", type=float, default=0.6, help="segundos que o efeito persiste sem deteccao")
     ap.add_argument("--suffix", default=None, help="sufixo do arquivo de saida (padrao EXT10 com extensor, senao final)")
+    ap.add_argument("--plan", help="blur_plan.json (de triage.py): borra so os videos com rosto sensivel; os demais saem sem efeito")
     ap.add_argument("--json", action="store_true", help="imprime resumo em JSON no final")
     a = ap.parse_args()
 
@@ -294,7 +299,7 @@ def main():
     workers = a.workers or (3 if enc != "libx264" else max(1, (os.cpu_count() or 2) // 2))
     opt = dict(out=os.path.abspath(a.out), style=a.style, extender=a.extender, target=a.target, size=(w, h), fps=a.fps,
                enc=enc, cq=a.cq, min_score=a.min_score, step=max(1, a.step), hold=a.hold,
-               suffix=a.suffix or ("EXT10" if a.extender else "final"))
+               suffix=a.suffix or ("EXT10" if a.extender else "final"), plan=None)
     print(f"[config] {len(files)} video(s) | estilo={a.style} | encoder={enc} | paralelo={workers} | saida={opt['out']}", flush=True)
     t0 = time.time()
     ext_pre = None
@@ -305,9 +310,14 @@ def main():
         if a.target and ext_dur < a.target - 5:
             print(f"[aviso] extensor ({ext_dur:.0f}s) mais curto que o alvo ({a.target:.0f}s): videos ficarao mais curtos", flush=True)
     results = []
+    if a.plan:
+        pl = json.load(open(a.plan, encoding="utf-8"))["videos"]
+        opt["plan"] = {k: v["blur"] for k, v in pl.items()}
+        print(f"[plano] borrar {sum(1 for v in opt['plan'].values() if v)} de {len(opt['plan'])} videos do plano; "
+              f"videos fora do plano seguem com o estilo '{a.style}'", flush=True)
     with Pool(min(workers, len(files))) as pool:
         for r in pool.imap_unordered(work, [(f, opt, ext_pre) for f in files]):
-            print(f"[ok] {os.path.basename(r['output'])}: {r['duration']}s, efeito em {r['frames_with_effect']}/{r['frames']} quadros, {r['seconds']}s", flush=True)
+            print(f"[ok] {os.path.basename(r['output'])}: {r['duration']}s, estilo={r['style']}, efeito em {r['frames_with_effect']}/{r['frames']} quadros, {r['seconds']}s", flush=True)
             results.append(r)
     print(f"[total] {time.time() - t0:.0f}s", flush=True)
     if a.json:
