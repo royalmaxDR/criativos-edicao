@@ -45,14 +45,19 @@ def overview_block(text):
     return " \n".join(block), lines
 
 
-def _clean(name):
+def _clean(name, role_first=False):
+    orig = name
     toks = name.split()
+    had_role = False
     while toks and re.fullmatch(CUE, toks[0], re.I):  # tira cargo/papel do inicio ("Bispo Edir Macedo" -> "Edir Macedo")
         toks = toks[1:]
+        had_role = True
     name = " ".join(toks)
-    if sum(1 for t in toks if t not in STOP) < 2 or any(t in STOP for t in toks[:1]):
+    good = [t for t in toks if t not in STOP]
+    # com cargo/papel colado ("Frei Gilson", "Padre Marcelo", "Papa Francisco") basta UM nome; sem cargo exige 2+
+    if len(good) < (1 if (had_role or role_first) else 2) or (toks and toks[0] in STOP):
         return None
-    return name.strip()
+    return (name if len(good) >= 2 else orig).strip()  # nome unico: mantem o cargo ("Frei Gilson")
 
 
 def analyze(text):
@@ -65,7 +70,7 @@ def analyze(text):
     for m in re.finditer(NAME_RE, block):  # nomes proprios: capitalizacao e CASE-SENSITIVE
         raw = m.group(1)
         role_first = bool(re.fullmatch(CUE, raw.split()[0], re.I))  # "Irma Anna Maria...", "Bispo Edir Macedo"
-        n = _clean(raw)
+        n = _clean(raw, role_first)
         if not n or n in names:
             continue
         window = block[max(0, m.start() - 70):m.start()]

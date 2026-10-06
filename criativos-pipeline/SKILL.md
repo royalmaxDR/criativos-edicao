@@ -45,14 +45,17 @@ pip install -r $SK/requirements.txt
 python $SK/scripts/setup_check.py        # confere python/opencv/ffmpeg/GPU/modelos (baixa modelos se faltarem)
 ```
 
-**1. Garimpar a biblioteca (navegador)**
-Abra o link da biblioteca, execute `scripts/collect_ads.js` na pagina (console, ou a ferramenta de JavaScript do agente),
-depois `CRP.start({target: 60})`, repita `CRP.status()` ate `running:false` e salve `CRP.result()` em `trabalho/ads.json`.
-Para "ativos ha mais tempo" colete bastante (o Facebook trava em ~40-60 por carga; veja TROUBLESHOOTING).
+**1. Garimpar a biblioteca**
+Modo automatico (recomendado, sem copiar/colar): `python $SK/scripts/collect_cdp.py "<link da Biblioteca>" --out trabalho/ads.json --target 100`
+abre um Chrome, roda o coletor e rola com a roda do mouse (carrega 100+ anuncios; a rolagem simples trava em ~30-60).
+Modo manual: cole `scripts/collect_ads.js` no console da pagina, `CRP.start({target: 100})`, repita `CRP.status()` ate
+`running:false` e salve `CRP.result()` em `trabalho/ads.json`.
 
 **2. Selecionar e baixar**
 ```bash
 python $SK/scripts/fetch_media.py trabalho/ads.json --top 10 --sort oldest --out trabalho/baixados
+# novo lote DIFERENTE do anterior: --exclude com os ids ja usados (exclui tambem o mesmo video em outros anuncios)
+python $SK/scripts/fetch_media.py trabalho/ads.json --top 10 --sort oldest --exclude usados.txt --out trabalho/lote2
 ```
 Gera `<library_id>.mp4` sem metadados, `.jpg` de miniatura e `baixados.json`. Duplicados sao agrupados.
 Dica: use `--posters-only` primeiro se quiser triar visualmente antes de baixar os videos.

@@ -21,8 +21,8 @@ Biblioteca de Anúncios ──► collect_ads.js ──► ads.json ──► fe
 | Etapa | Script | Função |
 |---|---|---|
 | 0 | `scripts/setup_check.py` | Confere Python, OpenCV, numpy, ffmpeg, encoder de GPU e modelos; baixa modelos se faltarem |
-| 1 | `scripts/collect_ads.js` | Roda **dentro da página** da biblioteca: rola, coleta ID, **data de início**, URL do vídeo e miniatura (PT/EN/ES) |
-| 2 | `scripts/fetch_media.py` | Escolhe os N **ativos há mais tempo** (ou mais impressos), remove duplicados, baixa em paralelo e **limpa metadados** |
+| 1 | `scripts/collect_cdp.py` (+ `collect_ads.js`) | Abre um Chrome, roda o coletor e rola como um usuário; salva `ads.json` com ID, **data de início**, URL do vídeo e miniatura (PT/EN/ES). Também dá para colar `collect_ads.js` no console |
+| 2 | `scripts/fetch_media.py` | Escolhe os N **ativos há mais tempo** (ou mais impressos), remove duplicados (`--exclude` p/ novo lote diferente), baixa em paralelo e **limpa metadados** |
 | 3a | `scripts/scan_faces.py` | Agrupa os rostos em **pessoas distintas** (recorte, quando e quanto tempo aparecem). Não identifica ninguém |
 | 3b | `scripts/lens_search.py` | Envia os recortes ao Google Lens num Chrome real e marca cada um como `nomeou`/`sem_nome`/`pendente`; se houver CAPTCHA, você resolve |
 | 3c | `scripts/triage.py` | **Regra do projeto:** se o Lens citou *qualquer* nome para um rosto, os vídeos em que ele aparece vão para o borrão (`blur_plan.json`) |

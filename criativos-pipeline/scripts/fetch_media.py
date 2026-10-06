@@ -74,6 +74,8 @@ def main():
     ap.add_argument("--top", type=int, default=10)
     ap.add_argument("--sort", choices=["oldest", "newest", "impressions"], default="oldest",
                     help="oldest = ativos ha mais tempo (data de inicio); impressions = ordem de aparicao na biblioteca")
+    ap.add_argument("--exclude", help="ids de anuncios ja usados: arquivo JSON/TXT (lista) ou ids separados por virgula. "
+                    "Tambem exclui qualquer outro anuncio que use o MESMO video")
     ap.add_argument("--out", required=True)
     ap.add_argument("--posters-only", action="store_true")
     ap.add_argument("--workers", type=int, default=4)
@@ -93,6 +95,12 @@ def main():
         if a.sort == "newest":
             ads.sort(key=lambda x: (x.get("start_date") or "0000", -x["rank"]), reverse=True)
     seen, picked = set(), []
+    if a.exclude:
+        raw = open(a.exclude, encoding="utf-8").read() if os.path.exists(a.exclude) else a.exclude
+        ex_ids = set(re.findall(r"\d{6,}", raw))
+        seen = {asset_key(x) for x in ads if x["library_id"] in ex_ids}  # mesmo video em outro anuncio tambem sai
+        ads = [x for x in ads if x["library_id"] not in ex_ids]
+        print(f"excluidos {len(ex_ids)} anuncios ja usados (+ duplicados do mesmo video)")
     for x in ads:
         k = asset_key(x)
         if k in seen:

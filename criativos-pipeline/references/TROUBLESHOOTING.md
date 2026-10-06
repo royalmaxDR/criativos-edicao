@@ -3,7 +3,7 @@
 ## Biblioteca de Anúncios
 | Sintoma | Causa / solução |
 |---|---|
-| `CRP.status()` trava em 30–60 anúncios | O Facebook carrega em lotes e às vezes para. Rode `CRP.start({target: 200, stallTicks: 60})` de novo, role a página manualmente, ou refine a busca (um anunciante/página por vez, `Mais recentes`). O mais antigo só é garantido entre os carregados |
+| Só 30–60 anúncios carregam | **Use `scripts/collect_cdp.py`** (rolagem real com a roda do mouse: carregou 110 na prática). Com o console, o Facebook carrega em lotes e às vezes para. Rode `CRP.start({target: 200, stallTicks: 60})` de novo, role a página manualmente, ou refine a busca (um anunciante/página por vez, `Mais recentes`). O mais antigo só é garantido entre os carregados |
 | `start_date` vem `null` | Idioma/formato novo. Veja o texto em `page_text` e acrescente o mês em `MONTHS` / um padrão em `parseDate` (`collect_ads.js`) |
 | `src` vazio | Anúncio de imagem/carrossel (só vídeos são coletados) ou vídeo ainda não carregou: role até ele e rode `CRP.status()` |
 | Download dá 403/expirado | As URLs do CDN expiram. Colete de novo e baixe imediatamente |
