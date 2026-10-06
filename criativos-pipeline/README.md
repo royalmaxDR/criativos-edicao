@@ -25,7 +25,7 @@ Biblioteca de Anúncios ──► collect_ads.js ──► ads.json ──► fe
 | 2 | `scripts/fetch_media.py` | Escolhe os N **ativos há mais tempo** (ou mais impressos), remove duplicados (`--exclude` p/ novo lote diferente), baixa em paralelo e **limpa metadados** |
 | 3a | `scripts/scan_faces.py` | Agrupa os rostos em **pessoas distintas** (recorte, quando e quanto tempo aparecem). Não identifica ninguém |
 | 3b | `scripts/lens_search.py` | Envia os recortes ao Google Lens num Chrome real e marca cada um como `nomeou`/`sem_nome`/`pendente`; se houver CAPTCHA, você resolve |
-| 3c | `scripts/triage.py` | **Regra do projeto:** se o Lens citou *qualquer* nome para um rosto, os vídeos em que ele aparece vão para o borrão (`blur_plan.json`) |
+| 3c | `scripts/triage.py` | **Regra do projeto:** se o Lens citou *qualquer* nome para um rosto, essa pessoa é tratada como figura pública e **só o rosto dela** é borrado (`blur_plan.json`); `--registry` acumula as pessoas entre lotes |
 | 4 | `scripts/blur_pipeline.py` | Borra os rostos (`strong`/`mosaic`), limpa metadados, converte p/ 1080×1920 e, **se pedido**, anexa um extensor até a duração alvo |
 | 5 | `scripts/verify.py` | Confere duração, tamanho, decodificação, metadados e se ainda há rosto reconhecível |
 
@@ -61,7 +61,7 @@ e (só para `lens_search.py`) Google Chrome. Os modelos de rosto já vêm em `mo
    `python scripts/lens_search.py --out trabalho/lens.md trabalho/analise/crops/P01.jpg trabalho/analise/crops/P02.jpg ...`
    `python scripts/triage.py --faces trabalho/analise/report.json --lens trabalho/lens_veredito.json --out trabalho/blur_plan.json`
 5. **Borrar (e estender, se quiser).**
-   - Borrar só onde o Lens citou nome: `python scripts/blur_pipeline.py --out trabalho/finais --style strong --plan trabalho/blur_plan.json trabalho/baixados`
+   - Borrar só o rosto das figuras públicas (modo padrão com `--plan`): `python scripts/blur_pipeline.py --out trabalho/finais --style strong --plan trabalho/blur_plan.json trabalho/baixados`
    - Borrar tudo: `python scripts/blur_pipeline.py --out trabalho/finais --style strong trabalho/baixados`
    - Borrão + extensor de 10 min:
      `python scripts/blur_pipeline.py --out trabalho/finais --style strong --extender meu_extensor.mp4 --target 600 trabalho/baixados`
@@ -81,7 +81,10 @@ e (só para `lens_search.py`) Google Chrome. Os modelos de rosto já vêm em `mo
 | `--workers` | auto | Vídeos em paralelo (3 com GPU; metade dos núcleos na CPU) |
 | `--min-score` | `0.5` | Confiança mínima do detector de rosto. Menor = mais proteção (mais falsos alertas) |
 | `--step` / `--hold` | `2` / `0.6` | Detectar a cada N quadros; segundos que o efeito persiste sem detecção |
-| `--plan ARQ` | — | `blur_plan.json` do `triage.py`: borra só os vídeos sinalizados (os demais saem sem efeito, mas limpos/convertidos/estendidos) |
+| `--plan ARQ` | — | `blur_plan.json` do `triage.py`: borra **só os rostos das pessoas sinalizadas** (reconhecidas quadro a quadro pela assinatura facial); os demais rostos ficam intactos |
+| `--plan-mode persons\|video` | `persons` | `video` = borra todos os rostos dos vídeos sinalizados (comportamento antigo) |
+| `--match` | `0.45` | Similaridade facial mínima para considerar "a mesma pessoa" (menor = borra mais, mas pega gente parecida). A decisão usa histerese: casar em 2 de 4 avaliações, ou 1 avaliação muito alta |
+| `--win-margin` | `0.75` | Segundos extras ao redor dos trechos em que o plano diz que há figura pública em cena: nessas janelas o detector fica mais sensível e todo rosto detectado é borrado (cobre perfil/ângulos difíceis) |
 | `--suffix` | `EXT10`/`final` | Sufixo do arquivo de saída |
 
 ### Como funciona por dentro (resumo)
@@ -94,7 +97,7 @@ e (só para `lens_search.py`) Google Chrome. Os modelos de rosto já vêm em `mo
 - **Desempenho medido (RTX 3060, 12 núcleos):** 7 criativos de 2–3 min → 10 min cada em ~3 min no total.
 
 ## Segurança e limites
-Leia `references/SAFETY_AND_LIMITS.md`. Em resumo: o pipeline **não identifica pessoas**; a regra é **"o Lens citou algum nome ⇒ borrar"**
+Leia `references/SAFETY_AND_LIMITS.md`. Em resumo: o pipeline **não identifica pessoas**; a regra é **"o Lens citou algum nome ⇒ borrar só o rosto dessa pessoa"**
 (borrar tudo é o modo conservador); CAPTCHA nunca é burlado; criativos de terceiros têm direitos autorais; o Lens fornece **pistas**, não provas.
 
 ## Estrutura

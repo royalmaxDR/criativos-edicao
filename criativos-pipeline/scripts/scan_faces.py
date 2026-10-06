@@ -101,6 +101,7 @@ def main():
         crop_path = os.path.join(a.out, "crops", pid + ".jpg")
         cv2.imwrite(crop_path, c["best"][1])
         report.append({"id": pid, "seconds_on_screen": round(len(c["hits"]) * a.every, 1), "crop": crop_path,
+                       "embedding": [round(float(x), 5) for x in c["c"]],  # assinatura do rosto (para borrar so esta pessoa)
                        "appearances": {v: [f"{x:.0f}-{y:.0f}s" for x, y in sp] for v, sp in spans.items()}})
         im = cv2.resize(c["best"][1], (160, 200))
         cv2.rectangle(im, (0, 0), (160, 16), (0, 0, 0), -1)

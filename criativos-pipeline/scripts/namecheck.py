@@ -28,7 +28,9 @@ STOP = {"Instagram", "YouTube", "Facebook", "Google", "Amazon", "TikTok", "Pinte
         "Resultados", "Ajuda", "Traduzir", "Modo", "Tudo", "Brasil", "Jesus", "Cristo", "Deus", "Santa", "São", "Igreja",
         "Catholic", "Church", "Meta", "Lens", "Imagem", "Detalhes", "Pessoa", "Rosto", "Legenda", "Contexto", "Identidade",
         "Vestimenta", "Cenário", "Função", "Atuação", "Identificação", "Características", "Expressão", "Mitra", "Pesquisa",
-        "Boston", "Roma", "Vaticano", "Universal", "Reino", "Nasa", "Sacerdote", "Católico", "Católica", "Stock", "iStock", "Getty", "Images", "Shutterstock", "Colégio", "Wikimedia"}
+        "Boston", "Roma", "Vaticano", "Universal", "Reino", "Nasa", "Sacerdote", "Católico", "Católica", "Stock", "iStock", "Getty", "Images", "Shutterstock", "Colégio", "Wikimedia",
+        "Fit", "Women", "Men", "Sport", "Size", "Small", "Running", "Vest", "Gym", "Pink", "Black", "Blue", "Kit", "Store", "Shop",
+        "Armação", "Óculos", "Grau", "Masculino", "Feminino", "Premium", "Video", "Footage", "Royalty", "Free"}
 
 
 def overview_block(text):

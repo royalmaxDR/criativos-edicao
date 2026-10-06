@@ -15,9 +15,11 @@ Um humano tambem executa os mesmos comandos a mao. Passo a passo detalhado: `ref
 1. **Nao identifique pessoas pelo rosto.** A checagem e feita por busca reversa de imagem (`scripts/lens_search.py`).
    Reporte o que a ferramenta devolveu como *pista*, nunca como fato.
 2. **REGRA DE DECISAO (definida pelo dono do projeto): se o Lens citar QUALQUER NOME para um rosto — mesmo que seja
-   outro nome a cada busca ou um nome errado — o rosto e sensivel e o video vai para o borrao.** O que importa e o Lens
+   outro nome a cada busca ou um nome errado — aquela PESSOA e tratada como figura publica e SO O ROSTO DELA e borrado
+   (nao os demais rostos do video).** O que importa e o Lens
    *nao dar nome nenhum*; se der, e sinal de que outros reconhecedores tambem darao. Nao e preciso "confirmar" quem e.
-   Rostos para os quais o Lens nao cita nome ficam como estao. Busca que falhou (`pendente`) ou pessoa nao enviada ao Lens
+   Rostos de pessoas para as quais o Lens nao cita nome ficam como estao (NAO borre todos os rostos: o usuario quer
+   borrar somente figuras publicas/famosos). Quem foi nomeado em qualquer lote anterior continua borrado (`--registry`). Busca que falhou (`pendente`) ou pessoa nao enviada ao Lens
    (`nao_verificado`) conta como sensivel ate ser refeita. Se o usuario preferir, `blur_pipeline.py` sem `--plan` borra tudo.
 3. **CAPTCHA:** nunca tente burlar. Se o Google/Meta pedir, pare e peca ao usuario para resolver na janela.
 4. **Peca confirmacao antes de:** baixar arquivos (diga origem, quantidade e pasta), publicar/enviar algo para fora,
@@ -64,20 +66,23 @@ Dica: use `--posters-only` primeiro se quiser triar visualmente antes de baixar 
 ```bash
 python $SK/scripts/scan_faces.py --out trabalho/analise trabalho/baixados/
 python $SK/scripts/lens_search.py --out trabalho/lens.md trabalho/analise/crops/P01.jpg trabalho/analise/crops/P02.jpg ...
-python $SK/scripts/triage.py --faces trabalho/analise/report.json --lens trabalho/lens_veredito.json --out trabalho/blur_plan.json
+python $SK/scripts/triage.py --faces trabalho/analise/report.json --lens trabalho/lens_veredito.json --out trabalho/blur_plan.json \
+    --registry registro_figuras.json --batch lote1
 ```
 `scan_faces.py` agrupa pessoas distintas (crops + onde/quando aparecem). `lens_search.py` abre um Chrome visivel, envia
 os recortes ao Google Lens e grava `lens.md` + `lens_veredito.json` (por recorte: `nomeou` | `sem_nome` | `pendente`);
 se aparecer CAPTCHA, o usuario resolve na janela. `triage.py` aplica a regra e escreve `blur_plan.json`
-(quais videos precisam de borrao e por que). Envie ao Lens pelo menos todas as pessoas com >= 4 s em tela; as mais
+(quais PESSOAS sao figuras publicas, com a assinatura do rosto de cada uma). `--registry` acumula essas pessoas entre lotes: quem
+foi nomeado uma vez continua sendo borrado nos lotes seguintes, mesmo que a nova busca venha sem nome. Envie ao Lens pelo menos todas as pessoas com >= 4 s em tela; as mais
 curtas tambem contam (`--unchecked blur` e o padrao do triage; use `--min-seconds` so se o usuario aceitar).
 Monte o relatorio por criativo (modelo em `references/WORKFLOW.md`), sempre com a ressalva de que sao pistas.
 
 **4. Aplicar o efeito nos rostos (+ extensor se pedido) — passo unico**
 ```bash
-# aplica a regra: borra so os videos do plano (Lens citou nome); os demais saem limpos/convertidos:
+# aplica a regra: borra SO O ROSTO das pessoas sinalizadas (figuras publicas); os demais rostos ficam intactos:
 python $SK/scripts/blur_pipeline.py --out trabalho/finais --style strong --plan trabalho/blur_plan.json trabalho/baixados/
-# borrar TUDO (sem plano):
+# modo antigo (borra todos os rostos dos videos sinalizados): --plan-mode video
+# borrar TODOS os rostos de tudo (sem plano):
 python $SK/scripts/blur_pipeline.py --out trabalho/finais --style strong trabalho/baixados/
 # borrao + extensor ate 10 min (extensor so quando o usuario pedir):
 python $SK/scripts/blur_pipeline.py --out trabalho/finais --style strong --plan trabalho/blur_plan.json --extender EXTENSOR.mp4 --target 600 trabalho/baixados/

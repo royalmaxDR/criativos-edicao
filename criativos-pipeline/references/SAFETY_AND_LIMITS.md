@@ -10,7 +10,7 @@
 ## Como tratar os resultados do Lens
 - É uma busca por **semelhança visual**. O resumo de IA pode errar (ex.: apontar alguém por causa de óculos, roupa ou cenário).
 - **Regra de decisão do projeto:** se o Lens cita *qualquer nome* para o rosto — certo, errado ou diferente a cada busca —
-  tratamos como sinal de que outros reconhecedores também darão nome, e o vídeo é borrado. Não se tenta descobrir "quem é de verdade".
+  tratamos como sinal de que outros reconhecedores também darão nome, e **o rosto dessa pessoa é borrado** (só o dela, não os demais). Não se tenta descobrir "quem é de verdade".
   O Lens já devolveu nomes diferentes para o mesmo rosto em buscas distintas; por isso a regra olha *se* há nome, não *qual*.
 - Use como **pista de risco**. Para um relatório: "o Lens sugere X (fonte)", nunca "esta pessoa é X".
 - Se o Lens aponta uma figura pública, a ação segura é **borrar com `mosaic`** (ou descartar o criativo).

@@ -31,6 +31,9 @@ def main():
     ap.add_argument("--out", default="blur_plan.json")
     ap.add_argument("--unchecked", choices=["blur", "ignore"], default="blur")
     ap.add_argument("--min-seconds", type=float, default=0.0)
+    ap.add_argument("--registry", help="registro_figuras.json: acumula as pessoas sinalizadas de TODOS os lotes. Quem foi nomeado pelo "
+                    "Lens em qualquer lote continua borrado nos proximos, mesmo que a nova busca venha sem nome")
+    ap.add_argument("--batch", default="lote", help="nome do lote (rotulo no registro)")
     a = ap.parse_args()
 
     persons = json.load(open(a.faces, encoding="utf-8"))
@@ -43,7 +46,7 @@ def main():
                 if p not in verd or rank[v["status"]] > rank[verd[p]["status"]]:
                     nm = sorted(set(v.get("names", [])) | set(verd.get(p, {}).get("names", [])))
                     verd[p] = dict(v, names=nm)
-    videos, plist = {}, {}
+    videos, plist, flagged = {}, {}, []
     for pr in persons:
         pid = pr["id"]
         v = verd.get(pid)
@@ -55,15 +58,46 @@ def main():
             status, names = "nao_verificado", []
         sensitive = status in ("nomeou", "pendente") or (status == "nao_verificado" and a.unchecked == "blur")
         plist[pid] = {"status": status, "names": names, "seconds_on_screen": pr["seconds_on_screen"], "sensitive": sensitive}
+        if sensitive and pr.get("embedding"):
+            flagged.append({"id": pid, "names": names, "emb": pr["embedding"]})
         for vid in pr["appearances"]:
-            e = videos.setdefault(vid, {"blur": False, "reasons": []})
+            e = videos.setdefault(vid, {"blur": False, "reasons": [], "flagged_persons": []})
             if sensitive:
+                e["flagged_persons"].append(pid)
                 e["blur"] = True
+                for span in pr["appearances"][vid]:  # "6-8s" -> janela [6, 8] em segundos
+                    m = re.match(r"(\d+)-(\d+)s", span)
+                    if m:
+                        e.setdefault("windows", []).append([int(m.group(1)), int(m.group(2))])
                 e["reasons"].append({"person": pid, "status": status, "names": names, "when": pr["appearances"][vid]})
-    plan = {"rule": "Lens citou nome => borrar o video", "videos": videos, "persons": plist}
+    if a.registry:
+        import numpy as np
+        reg = json.load(open(a.registry, encoding="utf-8")) if os.path.exists(a.registry) else []
+        for r in reg:  # formato antigo (uma assinatura) -> lista de assinaturas
+            if "emb" in r:
+                r["embs"] = [r.pop("emb")]
+
+        def sim(x, y):
+            return float(np.dot(np.array(x, dtype=np.float32), np.array(y, dtype=np.float32)))
+
+        for f in flagged:
+            hit = next((r for r in reg if max(sim(f["emb"], e) for e in r["embs"]) >= 0.5), None)
+            if hit:  # mesma pessoa ja registrada: soma nomes e guarda a nova assinatura (cobre mais angulos/idades da imagem)
+                hit["names"] = sorted(set(hit["names"]) | set(f["names"]))
+                if a.batch not in hit.setdefault("seen_in", []):
+                    hit["seen_in"].append(a.batch)
+                if len(hit["embs"]) < 12 and max(sim(f["emb"], e) for e in hit["embs"]) < 0.93:
+                    hit["embs"].append(f["emb"])
+            else:
+                reg.append({"id": f"{a.batch}:{f['id']}", "names": f["names"], "embs": [f["emb"]], "seen_in": [a.batch]})
+        json.dump(reg, open(a.registry, "w", encoding="utf-8"), ensure_ascii=False)
+        flagged = [{"id": r["id"], "names": r["names"], "emb": e} for r in reg for e in r["embs"]]
+        print(f"registro: {len(reg)} pessoa(s) sinalizadas ({len(flagged)} assinaturas) acumuladas em {a.registry}")
+    plan = {"rule": "Lens citou nome => borrar o ROSTO dessa pessoa (modo persons) / o video inteiro (modo video)",
+            "videos": videos, "persons": plist, "flagged_embeddings": flagged}
     json.dump(plan, open(a.out, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
     nb = sum(1 for v in videos.values() if v["blur"])
-    print(f"{nb} de {len(videos)} videos precisam de borrao -> {a.out}")
+    print(f"{nb} de {len(videos)} videos tem figura sensivel; {len(flagged)} pessoa(s) a borrar (so o rosto delas) -> {a.out}")
     for vid, e in sorted(videos.items()):
         why = "; ".join(f"{r['person']}={r['status']}{' ' + ','.join(r['names']) if r['names'] else ''}" for r in e["reasons"])
         print(f"  {'BORRAR' if e['blur'] else 'ok    '} {vid}  {why}")

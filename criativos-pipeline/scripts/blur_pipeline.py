@@ -22,6 +22,7 @@ import numpy as np
 HERE = os.path.dirname(os.path.abspath(__file__))
 MODELS = os.path.join(os.path.dirname(HERE), "models")
 DET_MODEL = os.path.join(MODELS, "yunet.onnx")
+REC_MODEL = os.path.join(MODELS, "sface.onnx")
 VIDEO_EXT = (".mp4", ".mov", ".mkv", ".webm", ".avi", ".m4v")
 
 
@@ -170,6 +171,27 @@ def prerender_extender(opt, enc):
     return pre, duration_of(pre)
 
 
+def judge(rec, fr, d, flag_embs):
+    """Maior similaridade (cosseno SFace) entre o rosto d e as assinaturas de figuras publicas; None se nao deu para medir."""
+    try:
+        f = rec.feature(rec.alignCrop(fr, d[:15].astype(np.float32))).flatten().astype(np.float32)
+        f /= (np.linalg.norm(f) + 1e-9)
+        return max(float(np.dot(f, e)) for e in flag_embs)
+    except Exception:
+        return None
+
+
+def decide(hist, thr):
+    """Histerese: marca como figura publica se casou em >=2 das ultimas 4 avaliacoes, ou se UMA avaliacao foi muito alta (thr+0.12).
+    Evita que uma coincidencia isolada de similaridade 'grude' num rosto comum."""
+    ok = [h for h in hist if h is not None]
+    if not ok:
+        return None
+    if max(ok) >= thr + 0.12:
+        return True
+    return sum(1 for h in ok[-4:] if h >= thr) >= 2
+
+
 # ----------------------------------------------------------------------------- per-video work
 def work(args):
     vin, opt, ext_pre = args
@@ -185,10 +207,16 @@ def work(args):
         fps_in = cap.get(cv2.CAP_PROP_FPS) or 30.0
         W, H = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH)), int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
         style = opt["style"]
-        if opt.get("plan") is not None and not opt["plan"].get(stem, True):
-            style = "none"  # o plano diz que este video nao tem rosto sensivel
+        persons_mode = bool(opt.get("flag_embs"))
+        if opt.get("plan") is not None and not persons_mode and not opt["plan"].get(stem, True):
+            style = "none"  # modo video: o plano diz que este video nao tem rosto sensivel
         effect = EFFECTS[style]
         det = cv2.FaceDetectorYN.create(DET_MODEL, "", (W, H), opt["min_score"], 0.3, 5000) if effect else None
+        rec = cv2.FaceRecognizerSF.create(REC_MODEL, "") if (effect and persons_mode) else None
+        flag_embs = opt.get("flag_embs") or []
+        match_thr = opt["match"]
+        wins = [(a - opt["win_margin"], b + opt["win_margin"]) for a, b in (opt.get("windows") or {}).get(stem, [])] if persons_mode else []
+        in_win_prev = None
         step, hold = opt["step"], int(fps_in * opt["hold"])
         part = os.path.join(tmp, "part.mp4")
         audio_in = ["-i", vin] if has_audio else ["-f", "lavfi", "-i", "anullsrc=r=44100:cl=stereo"]
@@ -204,9 +232,15 @@ def work(args):
             ok, fr = cap.read()
             if not ok:
                 break
+            in_win = bool(wins) and any(a <= n / fps_in <= b for a, b in wins)
             if effect and n % step == 0:
+                if wins and in_win != in_win_prev:  # nas janelas com figura publica o detector fica mais sensivel (perfil, rosto pequeno)
+                    det.setScoreThreshold(min(0.3, opt["min_score"]) if in_win else opt["min_score"])
+                    in_win_prev = in_win
                 _, fs = det.detect(fr)
-                dets = [f[:14].astype(float) for f in (fs if fs is not None else [])]
+                dets = [f[:15].astype(float) for f in (fs if fs is not None else [])]
+                if persons_mode and not in_win:  # fora das janelas: so rostos de verdade (ignora maos/objetos minusculos de baixa confianca)
+                    dets = [d for d in dets if d[14] >= 0.6 and min(d[2], d[3]) >= 24]
                 used = set()
                 for t in tracks:
                     best, bi = 0.2, -1
@@ -220,14 +254,28 @@ def work(args):
                         used.add(bi)
                         t["d"] = 0.6 * dets[bi] + 0.4 * t["d"]
                         t["age"] = 0
+                        if rec is not None:  # reavalia a identidade de tempos em tempos
+                            t["seen"] += 1
+                            if in_win:
+                                t["flag"] = True  # figura publica sabidamente em cena neste trecho
+                            elif t["seen"] % 3 == 0:  # reavalia a cada ~0.2s; decide por historico (nao por uma unica amostra)
+                                t["hist"].append(judge(rec, fr, dets[bi], flag_embs))
+                                t["hist"] = t["hist"][-6:]
+                                t["flag"] = decide(t["hist"], match_thr)
                     else:
                         t["age"] += step
-                tracks += [{"d": d, "age": 0} for i, d in enumerate(dets) if i not in used]
+                for i, d in enumerate(dets):
+                    if i not in used:
+                        h0 = [judge(rec, fr, d, flag_embs)] if (rec is not None and not in_win) else []
+                        tracks.append({"d": d, "age": 0, "seen": 0, "hist": h0,
+                                       "flag": (True if in_win else decide(h0, match_thr)) if rec is not None else True})
                 tracks = [t for t in tracks if t["age"] <= hold]
-            if tracks:
-                for t in tracks:
+            drawn = False
+            for t in tracks:
+                if t["flag"] is not False:  # modo video: sempre True; modo persons: so quem casa com figura sensivel
                     effect(fr, t["d"], W, H)
-                blurred += 1
+                    drawn = True
+            blurred += int(drawn)
             p.stdin.write(fr.tobytes())
             n += 1
         p.stdin.close()
@@ -284,7 +332,11 @@ def main():
     ap.add_argument("--step", type=int, default=2, help="detectar a cada N quadros")
     ap.add_argument("--hold", type=float, default=0.6, help="segundos que o efeito persiste sem deteccao")
     ap.add_argument("--suffix", default=None, help="sufixo do arquivo de saida (padrao EXT10 com extensor, senao final)")
-    ap.add_argument("--plan", help="blur_plan.json (de triage.py): borra so os videos com rosto sensivel; os demais saem sem efeito")
+    ap.add_argument("--plan", help="blur_plan.json (de triage.py): borra SO o rosto das pessoas sinalizadas (figuras publicas)")
+    ap.add_argument("--plan-mode", choices=["persons", "video"], default="persons",
+                    help="persons (padrao): borra apenas os rostos que casam com as pessoas sensiveis; video: borra todos os rostos dos videos sinalizados")
+    ap.add_argument("--win-margin", type=float, default=0.75, help="segundos extras antes/depois de cada trecho em que o plano diz que ha figura publica em cena")
+    ap.add_argument("--match", type=float, default=0.45, help="similaridade facial minima para considerar a mesma pessoa. 0.45 evita falsos alertas (0.32 borrava pessoas parecidas); angulos dificeis sao cobertos pelas janelas de tempo")
     ap.add_argument("--json", action="store_true", help="imprime resumo em JSON no final")
     a = ap.parse_args()
 
@@ -299,7 +351,7 @@ def main():
     workers = a.workers or (3 if enc != "libx264" else max(1, (os.cpu_count() or 2) // 2))
     opt = dict(out=os.path.abspath(a.out), style=a.style, extender=a.extender, target=a.target, size=(w, h), fps=a.fps,
                enc=enc, cq=a.cq, min_score=a.min_score, step=max(1, a.step), hold=a.hold,
-               suffix=a.suffix or ("EXT10" if a.extender else "final"), plan=None)
+               suffix=a.suffix or ("EXT10" if a.extender else "final"), plan=None, flag_embs=None, match=a.match, windows=None, win_margin=a.win_margin)
     print(f"[config] {len(files)} video(s) | estilo={a.style} | encoder={enc} | paralelo={workers} | saida={opt['out']}", flush=True)
     t0 = time.time()
     ext_pre = None
@@ -313,8 +365,14 @@ def main():
     if a.plan:
         pl = json.load(open(a.plan, encoding="utf-8"))["videos"]
         opt["plan"] = {k: v["blur"] for k, v in pl.items()}
-        print(f"[plano] borrar {sum(1 for v in opt['plan'].values() if v)} de {len(opt['plan'])} videos do plano; "
-              f"videos fora do plano seguem com o estilo '{a.style}'", flush=True)
+        opt["windows"] = {k: v.get("windows", []) for k, v in pl.items()}
+        fl = json.load(open(a.plan, encoding="utf-8")).get("flagged_embeddings", [])
+        if a.plan_mode == "persons" and fl:
+            opt["flag_embs"] = [np.array(x["emb"], dtype=np.float32) for x in fl]
+            print(f"[plano] modo PESSOAS: borrando so o rosto de {len(fl)} pessoa(s) sinalizada(s): "
+                  + ", ".join(f"{x['id']}({'/'.join(x['names'])[:30]})" for x in fl), flush=True)
+        else:
+            print(f"[plano] modo VIDEO: borrar {sum(1 for v in opt['plan'].values() if v)} de {len(opt['plan'])} videos do plano", flush=True)
     with Pool(min(workers, len(files))) as pool:
         for r in pool.imap_unordered(work, [(f, opt, ext_pre) for f in files]):
             print(f"[ok] {os.path.basename(r['output'])}: {r['duration']}s, estilo={r['style']}, efeito em {r['frames_with_effect']}/{r['frames']} quadros, {r['seconds']}s", flush=True)
